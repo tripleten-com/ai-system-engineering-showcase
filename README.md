@@ -146,6 +146,18 @@ Sanitization, hybrid retrieval, approval checkpoints, security validation, queue
 
 ## How to run the project
 
+### Option A: GitHub Codespaces (1-Click Cloud Environment)
+
+Open this repository in **GitHub Codespaces** (pre-configured with 4 Cores, 16 GB RAM, Docker, Python 3.11, and Node.js 20):
+1. Click **Code** -> **Codespaces** -> **Create codespace on <branch>** (or select the 4-core / 16 GB RAM machine).
+2. Once the environment initializes, run:
+   ```bash
+   docker compose up -d
+   ```
+3. Codespaces will automatically forward and open the **Incident War Room** on port 3000.
+
+### Option B: Local Docker Compose
+
 Requires Docker with Compose. No API keys, no cloud account, no manual setup.
 
 ```bash
