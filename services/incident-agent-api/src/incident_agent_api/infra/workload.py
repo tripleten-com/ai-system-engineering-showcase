@@ -154,6 +154,11 @@ class CustomerWorkload:
 
     async def reset(self) -> None:
         """Returns the pair to steady state and clears the quarantine flag."""
+        if self.state.poison_in_flight:
+            try:
+                await asyncio.to_thread(self._quarantine_poison_sync)
+            except Exception:
+                logger.exception("Quarantining in-flight poison during reset failed")
         self.state.draining = True
         self.state.active_consumers = NOMINAL_CONSUMERS
         self.state.poison_in_flight = False
@@ -252,23 +257,27 @@ class CustomerWorkload:
 
         # Bounded scan: the poison payload is one known message, so this looks for it rather than
         # draining the queue. An unbounded loop here could spin on a busy queue.
-        for _ in range(10):
-            response = client.receive_message(QueueUrl=source_url, MaxNumberOfMessages=10, WaitTimeSeconds=0)
-            messages = response.get("Messages", [])
-            if not messages:
-                return
+        valid_receipts: list[str] = []
+        try:
+            for _ in range(10):
+                response = client.receive_message(QueueUrl=source_url, MaxNumberOfMessages=10, WaitTimeSeconds=0)
+                messages = response.get("Messages", [])
+                if not messages:
+                    return
 
-            valid_receipts: list[str] = []
-            for message in messages:
-                if self._is_valid_job(message.get("Body", "")):
-                    valid_receipts.append(message["ReceiptHandle"])
-                    continue
-                client.send_message(QueueUrl=dlq_url, MessageBody=message["Body"])
-                client.delete_message(QueueUrl=source_url, ReceiptHandle=message["ReceiptHandle"])
-                logger.info("Poison payload %s quarantined to %s", POISON_MESSAGE_ID, QueueName.CUSTOMER_DLQ.value)
-                self._release(client, source_url, valid_receipts)
-                return
+                found_poison = False
+                for message in messages:
+                    if self._is_valid_job(message.get("Body", "")):
+                        valid_receipts.append(message["ReceiptHandle"])
+                        continue
+                    client.send_message(QueueUrl=dlq_url, MessageBody=message["Body"])
+                    client.delete_message(QueueUrl=source_url, ReceiptHandle=message["ReceiptHandle"])
+                    logger.info("Poison payload %s quarantined to %s", POISON_MESSAGE_ID, QueueName.CUSTOMER_DLQ.value)
+                    found_poison = True
 
+                if found_poison:
+                    return
+        finally:
             # Every message this scan looked at and did not want has to be handed straight back.
             # Receiving a message hides it for the queue's 30-second visibility timeout, so a
             # scan that simply moved on would leave up to ten real customer jobs invisible for
