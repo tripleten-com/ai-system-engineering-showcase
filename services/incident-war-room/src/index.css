@@ -1,0 +1,51 @@
+/**
+ * TripleTen Cloud Platform — Incident War Room
+ * ======================================================
+ * Component:        index.css
+ * Purpose:          Tailwind entry and the global light-shell, dark-console foundation.
+ * Interacts With:   tailwind.config.js, every component
+ *
+ * Curriculum Project: Cross-cutting — Production Aesthetics
+ * Skills:           Design Systems, Accessibility, Offline-First Asset Handling
+ * Tools:            Tailwind CSS 3, PostCSS
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Fontsource packages are imported through Vite in `main.tsx`, so every face is bundled with the
+ * application. There is deliberately no font CDN import or other runtime network request.
+ */
+
+body {
+  margin: 0;
+  background-color: theme('colors.surface-0');
+  color: theme('colors.text-primary');
+  font-family: theme('fontFamily.sans');
+}
+
+* {
+  scrollbar-color: theme('colors.raised') theme('colors.secondary');
+  scrollbar-width: thin;
+}
+
+/**
+ * §5 — under reduced motion, remove the pulse, the stagger, and the enter transitions, but **keep
+ * the metric tweens**. They carry information rather than decoration, and freezing them would make
+ * the demo unreadable rather than calmer. So this targets the named animations only; the
+ * `transition-duration` utilities on metric values are deliberately left alone.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hitl-pulse,
+  .animate-panel-enter,
+  .animate-fade-in,
+  .animate-shimmer {
+    animation: none !important;
+  }
+
+  [style*='animation-delay'] {
+    animation-delay: 0ms !important;
+  }
+}

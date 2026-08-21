@@ -1,0 +1,76 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+#
+# Anchored with a leading slash. Unanchored, gitignore matches these names at *any* depth, and
+# `lib/` was silently swallowing services/incident-war-room/src/lib/ — application source that
+# would never have reached CI. Build output lives at the repo root or inside a service directory
+# that is listed explicitly below, so anchoring costs nothing.
+.Python
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/.eggs/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+/wheels/
+/share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# IDEs and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Environment variables & local secrets
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# uv / tooling
+.uv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Playwright artefacts
+test-results/
+playwright-report/

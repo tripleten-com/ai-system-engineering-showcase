@@ -1,0 +1,398 @@
+{
+  "uid": "tt-golden-signals",
+  "title": "TripleTen Cloud — Golden Signals",
+  "description": "Platform overview: health enum, request throughput, 5xx error percentage, latency percentiles, and workload queue depth. Throughput and error percentage are PromQL rate() ratios over the counters exposed by incident-agent-api; nothing here reads a pre-computed rate.",
+  "tags": ["tripleten", "golden-signals", "project-1"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "",
+  "refresh": "1s",
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"] },
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [
+    { "title": "TripleTen Cloud", "type": "dashboards", "tags": ["tripleten"], "asDropdown": true, "icon": "external link", "includeVars": false, "keepTime": true, "tooltip": "Other TripleTen Cloud dashboards", "url": "" }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Platform Status",
+      "description": "system_health_status is derived from the run state, not measured: 1 = OK, 2 = Degraded, 0 = Down. Scenario 4 sits at Degraded for its whole run because the infrastructure never broke.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "#EF4444", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "HEALTHY", "color": "#10B981", "index": 1 } } },
+            { "type": "value", "options": { "2": { "text": "DEGRADED", "color": "#F59E0B", "index": 2 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] },
+          "unit": "none",
+          "noValue": "NO DATA"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "system_health_status",
+          "legendFormat": "status",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Throughput",
+      "description": "rate(http_requests_total[15s]). A 15s window over a 1s scrape gives 15 samples — responsive enough that the 4-second recovery decay is visible, wide enough not to be pure noise.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#9CA3AF" },
+          "decimals": 1,
+          "unit": "reqps",
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "rate(http_requests_total[15s])",
+          "legendFormat": "req/s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "5xx Error Rate",
+      "description": "A ratio of two rate() results, never a pre-computed percentage. The denominator is request throughput, which never reaches zero — baseline is 127-163 req/s and the deepest chaos floor is 42.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 1,
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 1 },
+              { "color": "#EF4444", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "100 * rate(http_5xx_errors_total[15s]) / rate(http_requests_total[15s])",
+          "legendFormat": "5xx %"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Latency p99",
+      "description": "Baseline band is 44-52ms. Scenario 1 takes this to 4,820ms; Scenario 3 leaves it untouched, which is the point of that scenario.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "ms",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 60 },
+              { "color": "#EF4444", "value": 500 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_request_duration_milliseconds{quantile=\"p99\"}",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Request Latency Percentiles",
+      "description": "p50 / p95 / p99 from the labelled gauge family. The y-axis is fixed to 0-5000ms rather than auto-scaled: an auto-scaled axis makes a 4,820ms spike look identical to a 48ms baseline. Series are separated by line style, not by hue — hue here is the status threshold.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "min": 0,
+          "max": 5000,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "axisSoftMax": 5000,
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 60 },
+              { "color": "#EF4444", "value": 500 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p50" },
+            "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dot", "dash": [1, 4] } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "p95" },
+            "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 6] } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_request_duration_milliseconds",
+          "legendFormat": "{{quantile}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Request Throughput",
+      "description": "rate(http_requests_total[15s]). Neutral by design: traffic volume is not a run state, so it does not get a status color.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#9CA3AF" },
+          "unit": "reqps",
+          "min": 0,
+          "max": 200,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "rate(http_requests_total[15s])",
+          "legendFormat": "req/s"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "HTTP 5xx Error Percentage",
+      "description": "100 * rate(http_5xx_errors_total[15s]) / rate(http_requests_total[15s]). Scenario 1 drives this to 36.4%; Scenarios 3 and 4 leave it at zero.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 50,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 1 },
+              { "color": "#EF4444", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "100 * rate(http_5xx_errors_total[15s]) / rate(http_requests_total[15s])",
+          "legendFormat": "5xx %"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Workload Queue Depth",
+      "description": "sqs_active_queue_depth — the fourth golden signal. Scenario 3 ramps this from 4 toward 1,540 over 8 seconds while every request-path signal above holds baseline. That divergence is the whole teaching point of the scenario.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "min": 0,
+          "max": 1600,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 20 },
+              { "color": "#EF4444", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "sqs_active_queue_depth",
+          "legendFormat": "customer-jobs depth"
+        }
+      ]
+    }
+  ]
+}

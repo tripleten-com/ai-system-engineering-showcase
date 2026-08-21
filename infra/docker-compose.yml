@@ -1,0 +1,289 @@
+services:
+  # ============================================================================
+  # 1. Frontend & Visualization Tier
+  # ============================================================================
+  incident-war-room:
+    build:
+      context: ../services/incident-war-room
+      dockerfile: Dockerfile
+      # Vite bakes `import.meta.env.VITE_*` into the bundle at build time, so these must be build
+      # args — an environment variable on the running container arrives far too late to matter.
+      # Without them, setting VITE_CURRICULUM_URL on a deployment did nothing and every deployment
+      # shipped the default CTA target.
+      args:
+        VITE_CURRICULUM_URL: ${VITE_CURRICULUM_URL:-}
+        VITE_REPOSITORY_URL: ${VITE_REPOSITORY_URL:-}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        VITE_LOCALSTACK_URL: ${VITE_LOCALSTACK_URL:-}
+    container_name: incident-war-room
+    ports:
+      # 8080 inside: the image runs unprivileged and cannot bind :80. The host port is unchanged.
+      - "3000:8080"
+    depends_on:
+      incident-agent-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.1.1
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # Dark by default. This is a command-center demo; a light-mode Grafana beside the War
+      # Room breaks the illusion that the two are one product.
+      - GF_USERS_DEFAULT_THEME=dark
+      # A prospective student clicking through from the War Room must land on a live chart,
+      # not a login form. Viewer is read-only: no editing, no saving, no admin surface.
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
+      - GF_AUTH_BASIC_ENABLED=true
+      # Grafana rejects a dashboard refresh faster than this floor and silently rounds it up.
+      # The default is 5s, which would throw away four fifths of a 1s scrape.
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
+      # http://localhost:3001 opens on the golden signals dashboard directly.
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/golden-signals.json
+      # Nothing on this stack reaches the public internet, and the news feed and update check
+      # both produce startup errors in an offline-first demo.
+      - GF_NEWS_NEWS_FEED_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.76.0
+    container_name: jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:16686/ || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # 2. Core Application Tier
+  # ============================================================================
+  incident-agent-api:
+    build:
+      # Repo root: incident-agent-api is a uv workspace member and needs uv.lock
+      # plus packages/contracts in the build context.
+      context: ..
+      dockerfile: services/incident-agent-api/Dockerfile
+    container_name: incident-agent-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres-vector:5432/tripleten_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOCALSTACK_ENDPOINT=${LOCALSTACK_ENDPOINT:-http://localstack:4566}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - SQS_CUSTOMER_JOBS_QUEUE=${SQS_CUSTOMER_JOBS_QUEUE:-customer-jobs}
+      - SQS_CUSTOMER_DLQ_QUEUE=${SQS_CUSTOMER_DLQ_QUEUE:-customer-dlq}
+      - SQS_REMEDIATION_JOBS_QUEUE=${SQS_REMEDIATION_JOBS_QUEUE:-remediation-jobs}
+      - SQS_REMEDIATION_DLQ_QUEUE=${SQS_REMEDIATION_DLQ_QUEUE:-remediation-dlq}
+      - S3_POSTMORTEMS_BUCKET=${S3_POSTMORTEMS_BUCKET:-tripleten-cloud-postmortems}
+      - CALLBACK_SECRET=${CALLBACK_SECRET:-tt-incident-callback-secret-key-99382}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4317}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres-vector:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  remediation-worker:
+    build:
+      # Repo root: remediation-worker is a uv workspace member and needs uv.lock
+      # plus packages/contracts in the build context.
+      context: ..
+      dockerfile: services/remediation-worker/Dockerfile
+    container_name: remediation-worker
+    env_file:
+      - path: ../.env
+        required: false
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres-vector:5432/tripleten_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LOCALSTACK_ENDPOINT=${LOCALSTACK_ENDPOINT:-http://localstack:4566}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - SQS_REMEDIATION_JOBS_QUEUE=${SQS_REMEDIATION_JOBS_QUEUE:-remediation-jobs}
+      - SQS_REMEDIATION_DLQ_QUEUE=${SQS_REMEDIATION_DLQ_QUEUE:-remediation-dlq}
+      - S3_POSTMORTEMS_BUCKET=${S3_POSTMORTEMS_BUCKET:-tripleten-cloud-postmortems}
+      - CALLBACK_SECRET=${CALLBACK_SECRET:-tt-incident-callback-secret-key-99382}
+      - AGENT_API_URL=${AGENT_API_URL:-http://incident-agent-api:8000}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      postgres-vector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import redis, os; r = redis.Redis.from_url(os.getenv('REDIS_URL', 'redis://redis:6379/0')); exit(0 if r.get('worker:heartbeat') else 1)"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # 3. Data & Emulated Cloud Tier
+  # ============================================================================
+  localstack:
+    image: localstack/localstack:4.0.3
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs,s3
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - ./localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4566/_localstack/health || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  postgres-vector:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: postgres-vector
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=tripleten_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./postgres/init-vector.sql:/docker-entrypoint-initdb.d/01-init-vector.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d tripleten_db || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.2-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+  # ============================================================================
+  # 4. Metrics Engine
+  # ============================================================================
+  prometheus:
+    image: prom/prometheus:v3.12.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    depends_on:
+      incident-agent-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    networks:
+      - tt-network
+    restart: unless-stopped
+
+networks:
+  tt-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
+  prometheus_data:
+  grafana_data:

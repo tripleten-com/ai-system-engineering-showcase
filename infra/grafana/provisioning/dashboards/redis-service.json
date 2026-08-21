@@ -1,0 +1,275 @@
+{
+  "uid": "tt-svc-redis",
+  "title": "TripleTen Cloud — Redis (cache tier)",
+  "description": "Service view for the Redis cache tier: memory saturation, cache hit ratio, and the throughput oscillation a thundering herd produces. Scenario 2 (cache_thundering_herd) is the run this dashboard is built to read.",
+  "tags": ["tripleten", "service", "redis", "project-1"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "",
+  "refresh": "1s",
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"] },
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [
+    { "title": "TripleTen Cloud", "type": "dashboards", "tags": ["tripleten"], "asDropdown": true, "icon": "external link", "includeVars": false, "keepTime": true, "tooltip": "Other TripleTen Cloud dashboards", "url": "" }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "Memory Utilization",
+      "description": "redis_memory_utilization_pct. Baseline band is 39-41%. Scenario 2 ramps it to 97.8% and Redis starts refusing writes with OOM.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 70 },
+              { "color": "#EF4444", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "minVizWidth": 75,
+        "minVizHeight": 75,
+        "sizing": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "redis_memory_utilization_pct",
+          "legendFormat": "memory"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "gauge",
+      "title": "Cache Hit Ratio",
+      "description": "cache_hit_ratio_pct. High is healthy, so the threshold ladder is inverted relative to every other gauge on this stack: red below 90%, amber to 98%, green above. Scenario 2 plunges it to 14.1%.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#EF4444", "value": null },
+              { "color": "#F59E0B", "value": 90 },
+              { "color": "#10B981", "value": 98 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "minVizWidth": 75,
+        "minVizHeight": 75,
+        "sizing": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "cache_hit_ratio_pct",
+          "legendFormat": "hit ratio"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Memory Utilization Over Time",
+      "description": "The two-second smoothstep ramp into OOM territory, then the four-second exponential decay back to the 39-41% band once warm_cache has run.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 70 },
+              { "color": "#EF4444", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "redis_memory_utilization_pct",
+          "legendFormat": "memory utilization"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Cache Hit Ratio Over Time",
+      "description": "A cache stampede is legible here before it is anywhere else: the ratio collapses while memory is still climbing, because every miss becomes a direct database read.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#EF4444", "value": null },
+              { "color": "#F59E0B", "value": 90 },
+              { "color": "#10B981", "value": 98 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "cache_hit_ratio_pct",
+          "legendFormat": "hit ratio"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Throughput During Stampede",
+      "description": "rate(http_requests_total[15s]). Scenario 2 replaces the baseline throughput expression outright with 120 + 60·sin(2.1t) clamped to [60, 180] — a roughly three-second oscillation, not a clean drop. Retry storms do not fail politely.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#9CA3AF" },
+          "unit": "reqps",
+          "min": 0,
+          "max": 200,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "rate(http_requests_total[15s])",
+          "legendFormat": "req/s"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "text",
+      "title": "Runbook RB-208",
+      "description": "",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 16 },
+      "options": {
+        "mode": "markdown",
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "**Redis Thundering Herd Mitigation & Staggered TTL Recovery** — retrieved as `RB-208` by hybrid pgvector cosine + full-text search, fused with Reciprocal Rank Fusion.\n\nThe drafted plan calls `warm_cache`, and it waits: nothing runs until an SRE clicks `[ Authorize Cache Warm-Up & Orphan Purge ]` in the War Room. Batch key warming with jittered TTLs is what stops the herd from re-forming on the next expiry boundary — a single shared TTL is how the stampede happened in the first place.\n\n*TripleTen Cloud Platform — Autonomous Incident Defense*"
+      }
+    }
+  ]
+}

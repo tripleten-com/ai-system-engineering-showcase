@@ -1,0 +1,39 @@
+# TripleTen Cloud Platform — Autonomous Incident Defense
+# ======================================================
+# Module:             infra/prometheus/prometheus.yml
+# Component:          Prometheus Scrape Configuration
+# Purpose:            Scrapes the simulated telemetry exposition from incident-agent-api once
+#                     per second so Grafana can resolve a four-second recovery decay.
+# Interacts With:     prometheus (:9090), incident-agent-api (:8000)
+#
+# Curriculum Project:  Project 1 — Diagnostics & Telemetry
+# Skills:             Observability, Prometheus Configuration, Time-Series Resolution
+# Tools:              Prometheus 3.12.0
+global:
+  # 1s, not the conventional 15s. The demo's shortest interesting signal is the e^(-1.8t)
+  # recovery decay, which is over in four seconds — at a 15s interval the whole curve would be
+  # a single sample and Grafana would draw a straight line between chaos and baseline.
+  scrape_interval: 1s
+  evaluation_interval: 1s
+  # Explicit rather than inherited. The default is 10s, which is longer than the interval
+  # above; Prometheus silently clamps it, and relying on that clamp hides a real constraint —
+  # a scrape that takes longer than 1s cannot be sustained at this interval.
+  scrape_timeout: 1s
+  # No `external_labels`. They are attached only when Prometheus talks outward — /federate,
+  # remote_write, and Alertmanager notifications — and this stack has none of the three. A
+  # `platform: tripleten-cloud` here would never reach a stored sample, so a dashboard
+  # filtering on it would match nothing while the config implied otherwise.
+
+scrape_configs:
+  # The only scrape target on the stack. incident-agent-api owns the chaos engine, so its
+  # /metrics is the entire simulated platform; there are no exporters to federate.
+  - job_name: 'incident-agent-api'
+    metrics_path: '/metrics'
+    scrape_interval: 1s
+    scrape_timeout: 1s
+    # No extra target labels. `job` and `instance` already identify this target uniquely, and
+    # every label added here forks the series identity — an existing TSDB then serves both the
+    # old and the new identity for a full lookback window and each dashboard panel draws two
+    # lines. A redundant label is not free.
+    static_configs:
+      - targets: ['incident-agent-api:8000']

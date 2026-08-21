@@ -1,0 +1,190 @@
+{
+  "uid": "tt-svc-postgres",
+  "title": "TripleTen Cloud — PostgreSQL (postgres-vector)",
+  "description": "Service view for postgres-vector: connection pool saturation and the tail latency it drives. Scenario 1 (db_pool_exhaustion) is the run this dashboard is built to read.",
+  "tags": ["tripleten", "service", "postgresql", "project-1"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "",
+  "refresh": "1s",
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"] },
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [
+    { "title": "TripleTen Cloud", "type": "dashboards", "tags": ["tripleten"], "asDropdown": true, "icon": "external link", "includeVars": false, "keepTime": true, "tooltip": "Other TripleTen Cloud dashboards", "url": "" }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "gauge",
+      "title": "Connection Pool Utilization",
+      "description": "db_pool_utilization_pct. Baseline band is 13-17%. Scenario 1 ramps it to 98.5% over two seconds; the pool is exhausted long before it reaches the top of the dial.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 70 },
+              { "color": "#EF4444", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "minVizWidth": 75,
+        "minVizHeight": 75,
+        "sizing": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "db_pool_utilization_pct",
+          "legendFormat": "pool"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Connection Pool Utilization Over Time",
+      "description": "The smoothstep chaos ramp and the e^(-1.8t) recovery decay are both visible here as curves, not as step changes. Threshold lines are drawn so the crossing point is readable without hovering.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 70 },
+              { "color": "#EF4444", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "db_pool_utilization_pct",
+          "legendFormat": "pool utilization"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Tail Latency Under Pool Pressure",
+      "description": "p95 and p99 only. A saturated pool is a tail-latency failure: p50 holds baseline throughout Scenario 1, which is the diagnostic signal that separates pool exhaustion from a broad slowdown.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "min": 0,
+          "max": 5000,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 60 },
+              { "color": "#EF4444", "value": 500 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p95" },
+            "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 6] } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_request_duration_milliseconds{quantile=~\"p95|p99\"}",
+          "legendFormat": "{{quantile}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "text",
+      "title": "Runbook RB-104",
+      "description": "",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "options": {
+        "mode": "markdown",
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "**PostgreSQL Emergency Connection Drain & Pool Recycling**\n\nWhen `db_pool_utilization_pct` crosses 90%, the agent retrieves `RB-104` from `knowledge_runbooks` by hybrid pgvector cosine + full-text search, fused with Reciprocal Rank Fusion.\n\nThe plan it drafts calls `flush_connection_pool` — and then **stops**. Nothing executes until an SRE clicks `[ Authorize DB Pool Drain & Recycle ]` in the War Room.\n\nWatch the pool curve above fall along `e^(-1.8t)` once the worker calls back.\n\n*TripleTen Cloud Platform — Autonomous Incident Defense*"
+      }
+    }
+  ]
+}

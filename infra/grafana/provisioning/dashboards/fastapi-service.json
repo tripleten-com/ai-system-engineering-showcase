@@ -1,0 +1,413 @@
+{
+  "uid": "tt-svc-fastapi",
+  "title": "TripleTen Cloud — FastAPI (incident-agent-api)",
+  "description": "Service view for the incident-agent-api hub: the three monotonic counters, the latency percentile family, the derived 5xx percentage, and the security firewall intercept count.",
+  "tags": ["tripleten", "service", "fastapi", "project-1"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "",
+  "refresh": "1s",
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"] },
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [
+    { "title": "TripleTen Cloud", "type": "dashboards", "tags": ["tripleten"], "asDropdown": true, "icon": "external link", "includeVars": false, "keepTime": true, "tooltip": "Other TripleTen Cloud dashboards", "url": "" }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Requests Served",
+      "description": "http_requests_total, raw. A counter, so POST /api/incidents/reset never clears it — only gauges reset.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#9CA3AF" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_requests_total",
+          "legendFormat": "requests"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "5xx Responses",
+      "description": "http_5xx_errors_total, raw. Flat at zero unless a scenario with an error surge has run.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#EF4444", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_5xx_errors_total",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Firewall Intercepts",
+      "description": "security_violations_total. Increments by exactly 1 per Scenario 4 run — once for the incident, not once per rejected tool call. Cyan because a guardrail held, which is a success, not a failure.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#9CA3AF", "value": null },
+              { "color": "#06B6D4", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "security_violations_total",
+          "legendFormat": "intercepts"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Latency p95",
+      "description": "Baseline band is 31-37ms. Scenario 2 takes this to 1,840ms as uncached reads fall through to Postgres.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "ms",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 45 },
+              { "color": "#EF4444", "value": 400 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_request_duration_milliseconds{quantile=\"p95\"}",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Counter Growth (Monotonic)",
+      "description": "The raw counters, not their rates. This panel exists to make the counter contract visible: both lines only ever climb, including straight through POST /api/incidents/reset.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#9CA3AF" },
+          "unit": "short",
+          "min": 0,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 6,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "5xx errors" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#EF4444" } },
+              { "id": "custom.axisPlacement", "value": "right" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "firewall intercepts" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#06B6D4" } },
+              { "id": "custom.axisPlacement", "value": "right" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_requests_total",
+          "legendFormat": "requests"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_5xx_errors_total",
+          "legendFormat": "5xx errors"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "security_violations_total",
+          "legendFormat": "firewall intercepts"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Request Latency Percentiles",
+      "description": "The whole http_request_duration_milliseconds family, split by its quantile label. Fixed 0-5000ms domain so a 100x spike still reads as a 100x spike.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "ms",
+          "min": 0,
+          "max": 5000,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 60 },
+              { "color": "#EF4444", "value": 500 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p50" },
+            "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dot", "dash": [1, 4] } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "p95" },
+            "properties": [{ "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 6] } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "http_request_duration_milliseconds",
+          "legendFormat": "{{quantile}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Derived 5xx Percentage",
+      "description": "100 * rate(http_5xx_errors_total[15s]) / rate(http_requests_total[15s]). The API never exports this series; it exists only here, as a ratio of two counter rates.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "min": 0,
+          "max": 50,
+          "decimals": 1,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 12,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 1 },
+              { "color": "#EF4444", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "100 * rate(http_5xx_errors_total[15s]) / rate(http_requests_total[15s])",
+          "legendFormat": "5xx %"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Security Firewall Intercepts",
+      "description": "security_violations_total as a step function. One step per Scenario 4 run: the Pydantic guardrail rejected an injected tool call before any human was involved, and zero tool callables executed.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#06B6D4" },
+          "unit": "short",
+          "min": 0,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 14,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#06B6D4", "value": null }] }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "security_violations_total",
+          "legendFormat": "intercepts"
+        }
+      ]
+    }
+  ]
+}

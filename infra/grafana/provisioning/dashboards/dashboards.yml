@@ -1,0 +1,34 @@
+# TripleTen Cloud Platform — Autonomous Incident Defense
+# ======================================================
+# Module:             infra/grafana/provisioning/dashboards/dashboards.yml
+# Component:          Grafana Dashboard Provider
+# Purpose:            Loads every dashboard JSON in this directory at boot so the demo needs
+#                     no import step, no login walkthrough, and no manual folder creation.
+# Interacts With:     grafana (:3001)
+#
+# Curriculum Project:  Project 1 — Diagnostics & Telemetry
+# Skills:             Observability, Infrastructure as Code, Grafana Provisioning
+# Tools:              Grafana 13.1.1
+#
+# Grafana's file provider only picks up `*.json`, so this provider config lives in the same
+# directory as the dashboards it loads — which is where repository-structure.md §10 says a
+# dashboard goes.
+apiVersion: 1
+
+providers:
+  - name: tripleten-cloud-platform
+    orgId: 1
+    folder: TripleTen Cloud Platform
+    folderUid: tripleten-cloud-platform
+    type: file
+    # The dashboards are a build artifact of this repository, not user state. Edits made in
+    # the UI must never be the source of truth, and a viewer must not be able to delete the
+    # demo out from under the next visitor.
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      # Flat: all five dashboards belong in one folder. Nested folders per file would put
+      # each dashboard in a folder of its own.
+      foldersFromFilesStructure: false

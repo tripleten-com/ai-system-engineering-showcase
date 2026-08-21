@@ -1,0 +1,309 @@
+{
+  "uid": "tt-svc-sqs",
+  "title": "TripleTen Cloud — LocalStack SQS (workload queue)",
+  "description": "Service view for the emulated SQS tier: customer-jobs backlog, customer-dlq quarantine count, and the consumer pool size. Scenario 3 (worker_deadlock) is the run this dashboard is built to read.",
+  "tags": ["tripleten", "service", "sqs", "localstack", "project-3"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "weekStart": "",
+  "refresh": "1s",
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": { "refresh_intervals": ["1s", "5s", "10s", "30s", "1m"] },
+  "annotations": { "list": [] },
+  "templating": { "list": [] },
+  "links": [
+    { "title": "TripleTen Cloud", "type": "dashboards", "tags": ["tripleten"], "asDropdown": true, "icon": "external link", "includeVars": false, "keepTime": true, "tooltip": "Other TripleTen Cloud dashboards", "url": "" }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Active Consumers",
+      "description": "active_workers_count. Four at steady state. Scenario 3 steps it to zero instantly — a deadlock is not a ramp — and back to four the moment reboot_workers lands.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#EF4444", "value": null },
+              { "color": "#F59E0B", "value": 1 },
+              { "color": "#10B981", "value": 4 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "active_workers_count",
+          "legendFormat": "consumers"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Queue Depth",
+      "description": "sqs_active_queue_depth on customer-jobs. Baseline band is 2-6 messages; Scenario 3 ramps it toward 1,540 over eight seconds while the producer keeps publishing into a queue nobody is draining.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 20 },
+              { "color": "#EF4444", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "sqs_active_queue_depth",
+          "legendFormat": "depth"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Quarantined Messages",
+      "description": "dlq_message_count on customer-dlq. Cyan rather than red at 1: a poison payload sitting in the DLQ means the redrive policy did its job and isolated it, which is a guardrail holding rather than a failure. It clears on the return to HEALTHY or on reset.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 0,
+          "unit": "short",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#06B6D4", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "dlq_message_count",
+          "legendFormat": "dlq"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Platform Status",
+      "description": "system_health_status, derived from the run state: 1 = OK, 2 = Degraded, 0 = Down.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "#EF4444", "index": 0 } } },
+            { "type": "value", "options": { "1": { "text": "HEALTHY", "color": "#10B981", "index": 1 } } },
+            { "type": "value", "options": { "2": { "text": "DEGRADED", "color": "#F59E0B", "index": 2 } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#9CA3AF", "value": null }] },
+          "unit": "none",
+          "noValue": "NO DATA"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "value",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "system_health_status",
+          "legendFormat": "status"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Workload Backlog",
+      "description": "The eight-second queue ramp is deliberately slower than the two-second ramp every other metric uses: a 1,540-message backlog appearing in two seconds reads as a data glitch rather than a queue filling behind stalled consumers.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "short",
+          "min": 0,
+          "max": 1600,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 14,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "dashed" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#10B981", "value": null },
+              { "color": "#F59E0B", "value": 20 },
+              { "color": "#EF4444", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "sqs_active_queue_depth",
+          "legendFormat": "customer-jobs depth"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Consumer Pool & DLQ Quarantine",
+      "description": "Both series are step functions, drawn stepped rather than interpolated. Interpolating them would invent a consumer count of 2.5 that never existed.",
+      "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "#10B981" },
+          "unit": "short",
+          "min": 0,
+          "max": 5,
+          "decimals": 0,
+          "mappings": [],
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "axisPlacement": "auto",
+            "thresholdsStyle": { "mode": "off" },
+            "scaleDistribution": { "type": "linear" },
+            "stacking": { "mode": "none", "group": "A" },
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#10B981", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "quarantined (customer-dlq)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "#06B6D4" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [8, 6] } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": [] },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "active_workers_count",
+          "legendFormat": "active consumers"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "tripleten-prometheus" },
+          "expr": "dlq_message_count",
+          "legendFormat": "quarantined (customer-dlq)"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "text",
+      "title": "Runbook RB-312 & Control-Plane Isolation",
+      "description": "",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 14 },
+      "options": {
+        "mode": "markdown",
+        "code": { "language": "plaintext", "showLineNumbers": false, "showMiniMap": false },
+        "content": "**Asynchronous Worker Deadlock Recovery & Poison Message Isolation** — retrieved as `RB-312` by hybrid pgvector cosine + full-text search, fused with Reciprocal Rank Fusion.\n\nThe drafted plan calls `isolate_poison_message` and `reboot_workers`, and it waits for `[ Authorize DLQ Quarantine & Worker Reboot ]`.\n\nNote what this dashboard does **not** show: every request-path signal on the Golden Signals dashboard holds baseline for the whole of Scenario 3. The workload stalled; the request path never did. That is the one scenario a golden-signals bar alone would miss, which is exactly why the queue depth is on it.\n\n`customer-jobs` and `customer-dlq` carry business workload. `remediation-jobs` and `remediation-dlq` are the control plane, and they only ever carry the single job an SRE approved. The two never cross.\n\n*TripleTen Cloud Platform — Autonomous Incident Defense*"
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# The nine service definitions live in infra/docker-compose.yml.
+# This shim exists so `docker-compose up -d` still works from the repository root,
+# which is a charter requirement.
+# Editing this file is almost never what you want — edit infra/docker-compose.yml.
+include:
+  - infra/docker-compose.yml

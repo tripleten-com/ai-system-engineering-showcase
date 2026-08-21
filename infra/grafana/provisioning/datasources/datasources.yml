@@ -1,0 +1,51 @@
+# TripleTen Cloud Platform — Autonomous Incident Defense
+# ======================================================
+# Module:             infra/grafana/provisioning/datasources/datasources.yml
+# Component:          Grafana Datasource Provisioning
+# Purpose:            Declares the Prometheus metrics source and the Jaeger trace source so
+#                     the pre-provisioned dashboards resolve without any manual setup.
+# Interacts With:     grafana (:3001), prometheus (:9090), jaeger (:16686)
+#
+# Curriculum Project:  Project 1 — Diagnostics & Telemetry
+# Skills:             Observability, Infrastructure as Code, Grafana Provisioning
+# Tools:              Grafana 13.1.1, Prometheus 3.12, Jaeger 1.76
+#
+# The `uid` on each datasource is load-bearing, not cosmetic. Every panel in
+# infra/grafana/provisioning/dashboards/ references its source by uid; without an explicit
+# one Grafana generates a random uid at first boot and every panel renders
+# "Datasource ${uid} was not found".
+apiVersion: 1
+
+# Provisioned datasources are re-applied on every boot. Deleting by name first keeps a
+# renamed or retyped entry from leaving an orphan behind in the Grafana database volume.
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+  - name: Jaeger
+    orgId: 1
+
+datasources:
+  - name: Prometheus
+    uid: tripleten-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      # Must match the scrape interval in infra/prometheus/prometheus.yml. Grafana derives
+      # $__rate_interval and its minimum step from this; leaving it at the 15s default would
+      # make the dashboards request coarser data than Prometheus actually holds and smooth the
+      # 4-second recovery decay into a straight line.
+      timeInterval: 1s
+      httpMethod: POST
+      prometheusType: Prometheus
+      prometheusVersion: 3.12.0
+
+  - name: Jaeger
+    uid: tripleten-jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    isDefault: false
+    editable: false

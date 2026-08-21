@@ -1,0 +1,48 @@
+[project]
+name = "incident-agent-api"
+version = "1.0.0"
+description = "TripleTen Cloud Platform — incident telemetry, retrieval, and agent control plane"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "tripleten-contracts",
+  "fastapi>=0.110.0,<1.0.0",
+  "uvicorn[standard]>=0.28.0,<1.0.0",
+  "pydantic>=2.6.0,<3.0.0",
+  "pydantic-settings>=2.2.0,<3.0.0",
+  "asyncpg>=0.29.0,<1.0.0",
+  "psycopg2-binary>=2.9.9,<3.0.0",
+  "pgvector>=0.2.5,<1.0.0",
+  "sqlalchemy>=2.0.28,<3.0.0",
+  "redis>=5.0.3,<6.0.0",
+  "boto3>=1.34.0,<2.0.0",
+  "httpx>=0.27.0,<1.0.0",
+  "prometheus-client>=0.20.0,<1.0.0",
+  "opentelemetry-api>=1.24.0,<2.0.0",
+  "opentelemetry-sdk>=1.24.0,<2.0.0",
+  "opentelemetry-exporter-otlp>=1.24.0,<2.0.0",
+  "opentelemetry-instrumentation-fastapi>=0.45b0,<1.0.0",
+  "opentelemetry-instrumentation-httpx>=0.45b0,<1.0.0",
+  "opentelemetry-instrumentation-sqlalchemy>=0.45b0,<1.0.0",
+  "opentelemetry-instrumentation-redis>=0.45b0,<1.0.0",
+  "numpy>=1.26.0,<2.0.0",
+  # Project 5. langgraph-checkpoint-postgres is what makes the approval gate survivable: the
+  # graph interrupts before EXECUTING and its state lives in Postgres, not in this process.
+  # It speaks psycopg 3, which is why that lands here alongside the asyncpg the app uses.
+  # Pinned as a compatible pair. langgraph-checkpoint-postgres emits a
+  # "You're using incompatible versions" DeprecationWarning when paired with langgraph 0.2.x,
+  # and the component it warns about is the one holding the approval gate — not a warning to
+  # live with. Both bounds move together on any upgrade.
+  "langgraph>=0.6.0,<0.7.0",
+  "langgraph-checkpoint-postgres>=2.0.21,<3.0.0",
+  "psycopg[binary,pool]>=3.1.0,<4.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/incident_agent_api"]
+
+[tool.uv.sources]
+tripleten-contracts = { workspace = true }

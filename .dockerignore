@@ -1,0 +1,22 @@
+# The Python service images build with the repository root as their context
+# (uv workspace members need uv.lock and packages/contracts in scope), so this
+# file — not the per-service .dockerignore — governs what they can see.
+.git
+.gitignore
+.venv
+venv
+node_modules
+**/node_modules
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/dist
+**/build
+docs
+tests/e2e
+playwright-report
+test-results
+.env
+*.md

@@ -1,0 +1,23 @@
+# Enforce LF line endings for shell scripts and SQL files across all operating systems
+*.sh text eol=lf
+*.sql text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+# Makefile recipes must be LF: a CRLF recipe passes a trailing \r to the shell
+# on Linux and CI, producing failures that look nothing like a line-ending bug.
+Makefile text eol=lf
+*.toml text eol=lf
+uv.lock text eol=lf
+Dockerfile text eol=lf
+*.dockerignore text eol=lf
+
+# Generated TypeScript must stay LF in the working tree on every platform. The
+# generator writes LF; if git checked it out as CRLF on Windows, the CI drift
+# check (`make contracts && git diff --exit-code`) would fail on every clone.
+*.gen.ts text eol=lf
+
+# PowerShell is the Windows-native runner; keep it CRLF.
+*.ps1 text eol=crlf
