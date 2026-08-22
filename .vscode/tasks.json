@@ -1,0 +1,34 @@
+{
+  // This file exists for one reason: postStartCommand's output is not surfaced
+  // anywhere a student will look, so the boot-time startup was invisible and a
+  // 5-minute pull read as a hung Codespace. A folderOpen task runs in the
+  // Terminal panel, where its output is live and scrollable.
+  //
+  // Both this and postStartCommand invoke start-stack.sh. The script takes a
+  // lock: whichever runs first does the work, and the other tails its log, so
+  // the narration shows up here either way.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start the incident stack",
+      "detail": "Pulls, builds, and starts all 9 containers with live progress",
+      "type": "shell",
+      "command": "bash .devcontainer/start-stack.sh",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "isBackground": false,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "revealProblems": "never",
+        "focus": false,
+        "echo": false,
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true,
+        "group": "startup"
+      }
+    }
+  ]
+}
