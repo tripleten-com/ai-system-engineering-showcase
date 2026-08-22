@@ -1,6 +1,5 @@
 # TripleTen AI Systems Engineering Showcase — Autonomous Incident Defense
 
-[![CI](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml/badge.svg)](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tripleten-com/ai-system-engineering-showcase)
 
 A production-shaped technical demo of how observability, retrieval, guardrails, durable state,
