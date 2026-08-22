@@ -52,7 +52,12 @@ dist-ssr/
 
 # IDEs and OS files
 .idea/
-.vscode/
+# Personal editor state stays ignored, but tasks.json ships: it is what makes
+# the boot-time stack startup visible in a fresh Codespace. Note the `/*` —
+# with a bare `.vscode/` git never descends into the directory and the negation
+# below would never match.
+.vscode/*
+!.vscode/tasks.json
 *.swp
 *.swo
 *~
@@ -74,3 +79,10 @@ Thumbs.db
 # Playwright artefacts
 test-results/
 playwright-report/
+
+# AI Agent files & local instructions
+AGENTS.md
+AGENT.md
+agent.md
+.agent/
+.agents/

@@ -1,6 +1,5 @@
 # TripleTen AI Systems Engineering Showcase — Autonomous Incident Defense
 
-[![CI](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml/badge.svg)](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tripleten-com/ai-system-engineering-showcase)
 
 A production-shaped technical demo of how observability, retrieval, guardrails, durable state,
@@ -155,8 +154,17 @@ Sanitization, hybrid retrieval, approval checkpoints, security validation, queue
 
 Open this repository in **GitHub Codespaces** (pre-configured with 4 Cores, 16 GB RAM, Docker, Python 3.11, and Node.js 20):
 1. Click the **Open in GitHub Codespaces** button at the top of this README (or select **Code** -> **Codespaces** -> **Create codespace on main**).
-2. The environment automatically provisions dependencies, copies `.env.example` to `.env`, and launches the 9-container stack via `docker compose up -d`.
-3. Codespaces automatically forwards and opens the **Incident War Room** on port 3000.
+2. The environment provisions dependencies, copies `.env.example` to `.env`, and starts the 9-container stack on its own.
+3. Watch it happen in the **Terminal** panel, in a tab named *Start the incident stack*. It narrates each step -- pull, build, start, health checks -- and a first run takes **4-7 minutes** because it downloads roughly 1.5 GB of images and builds three services. It finishes by listing all nine containers with their health and a one-line description of each, then the address of every service that exposes a port.
+4. Codespaces automatically forwards and opens the **Incident War Room** on port 3000.
+
+Nothing to type. If you closed that terminal or want to run it again by hand:
+
+```bash
+bash .devcontainer/start-stack.sh
+```
+
+It is safe to re-run: already-healthy containers are left alone, and if a startup is already in progress it attaches to that one rather than starting a second. If a container fails to come up, the script prints its last 20 log lines and what to run next; the whole run is kept at `/tmp/tt-stack-start.log`.
 
 ### Option B: Local Docker Compose
 
