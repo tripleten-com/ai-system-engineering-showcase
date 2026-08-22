@@ -138,30 +138,52 @@ report_failure() {
   printf '%s\n' "  cat ${LOG}     ${DIM}# this whole run${OFF}"
 }
 
-# container|display name|what it does
+# container|port|kind|display name|what it does
 # Order and wording mirror the Infrastructure table in README.md, so a student
 # reading the repo and a student watching this terminal see the same nine things
 # described the same way. Descriptions are trimmed to fit a terminal.
+#
+# kind drives the address list below: http gets a URL, tcp gets host:port (a
+# browser is no use against Postgres), and none means the service listens on
+# nothing and is left out of that list entirely.
 SERVICE_ROWS=(
-  "incident-war-room|Incident War Room|Launch incidents, follow the live response"
-  "incident-agent-api|Incident Agent API|FastAPI + LangGraph control plane, /docs"
-  "remediation-worker|Remediation Worker|Runs approved jobs, archives postmortems"
-  "postgres-vector|PostgreSQL with pgvector|Runbooks, embeddings, LangGraph state"
-  "redis|Redis|Cache, fast state, worker heartbeats"
-  "localstack|LocalStack|Emulated AWS SQS queues and S3 storage"
-  "prometheus|Prometheus|Collects live system metrics"
-  "grafana|Grafana|Service health and incident dashboards"
-  "jaeger|Jaeger|Distributed request traces"
+  "incident-war-room|3000|http|Incident War Room|Launch incidents, follow the live response"
+  "incident-agent-api|8000|http|Incident Agent API|FastAPI + LangGraph control plane, /docs"
+  "remediation-worker||none|Remediation Worker|Runs approved jobs, archives postmortems"
+  "postgres-vector|5432|tcp|PostgreSQL with pgvector|Runbooks, embeddings, LangGraph state"
+  "redis|6379|tcp|Redis|Cache, fast state, worker heartbeats"
+  "localstack|4566|http|LocalStack|Emulated AWS SQS queues and S3 storage"
+  "prometheus|9090|http|Prometheus|Collects live system metrics"
+  "grafana|3001|http|Grafana|Service health and incident dashboards"
+  "jaeger|16686|http|Jaeger|Distributed request traces"
 )
 
+# In a Codespace, localhost:3000 is not an address a student can open in another
+# tab or send to anyone -- the forwarded host is. CODESPACE_NAME is set by
+# Codespaces and unset everywhere else, which is exactly the needed distinction.
+url_for() {
+  local port=$1 kind=$2
+  case "$kind" in
+    tcp) printf 'localhost:%s' "$port" ;;
+    http)
+      if [ -n "${CODESPACE_NAME:-}" ]; then
+        printf 'https://%s-%s.%s' "$CODESPACE_NAME" "$port" \
+          "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+      else
+        printf 'http://localhost:%s' "$port"
+      fi
+      ;;
+  esac
+}
+
 print_summary() {
-  local lines row name label desc status color
+  local lines row name port kind label desc status color
   lines=$(health_lines) || lines=''
 
   printf '\n%s\n\n' "${GREEN}${BOLD}Stack is up.${OFF} ${BOLD}Here is what is running:${OFF}"
 
   for row in "${SERVICE_ROWS[@]}"; do
-    IFS='|' read -r name label desc <<< "$row"
+    IFS='|' read -r name port kind label desc <<< "$row"
     status=$(printf '%s\n' "$lines" | awk -F'|' -v n="$name" '$1 == n {print $2}')
     [ -z "$status" ] && status="missing"
     case "$status" in
@@ -170,6 +192,13 @@ print_summary() {
     esac
     printf '  - %s [%s%s%s] - %s%s%s\n' \
       "$label" "$color" "$status" "$OFF" "$DIM" "$desc" "$OFF"
+  done
+
+  printf '\n%s\n\n' "${BOLD}Reachable at:${OFF}"
+  for row in "${SERVICE_ROWS[@]}"; do
+    IFS='|' read -r name port kind label desc <<< "$row"
+    [ "$kind" = "none" ] && continue
+    printf '  - %s [%s]\n' "$label" "$(url_for "$port" "$kind")"
   done
 
   # A tenth service added to compose without a row here would simply be absent
