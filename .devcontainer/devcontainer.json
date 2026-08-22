@@ -15,7 +15,16 @@
     // on 01-init-vector.sql), but the Prometheus config, Grafana provisioning,
     // and LocalStack init script were all equally missing. An in-container
     // daemon shares this filesystem, so the mounts resolve to the real files.
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    //
+    // This does not cost us the image cache. The feature keeps /var/lib/docker
+    // and /var/lib/containerd in named volumes suffixed with ${devcontainerId},
+    // so pulled images and build layers survive a container rebuild. Only a
+    // brand-new Codespace starts cold.
+    // Pinned to major 4, not 2. `:2` resolves to 2.17, which predates the
+    // /var/lib/containerd volume the feature now declares — and without it a
+    // dind daemon on an overlayfs root filesystem (which is what Codespaces
+    // gives us) hits overlay-on-overlay snapshotter failures.
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
       "version": "latest",
       // `docker-compose` (hyphen) is what `poe up` / `make up` invoke, and the
       // v1 Python binary cannot parse the `include:` in the root compose.yaml.
