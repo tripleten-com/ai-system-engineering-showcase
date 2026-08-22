@@ -100,6 +100,16 @@ wait_for_health() {
     now=$SECONDS
     if [ "$ready" != "$last_ready" ] || [ $((now - last_print)) -ge 15 ]; then
       printf '%s\n' "   ${DIM}[$(fmt_dur "$elapsed")]${OFF}  healthy ${GREEN}${ready}${OFF}/${expected}  ${DIM}not ready yet: ${pending:-none}${OFF}"
+      # One line of context per container still coming up, so the wait shows
+      # what is actually happening. This replaced a backgrounded
+      # `docker compose logs -f`, which was wrong twice over: LocalStack logs
+      # every SQS poll, so the firehose buried this table, and on Windows the
+      # MSYS shell cannot signal a native docker.exe, so the follower outlived
+      # the script and kept spraying the terminal after it exited.
+      for name in $pending; do
+        last_line=$(docker logs --tail 1 "$name" 2>&1 | tr -d '\r' | tail -1 | cut -c1-130)
+        [ -n "$last_line" ] && printf '%s\n' "        ${DIM}${name}: ${last_line}${OFF}"
+      done
       last_ready=$ready
       last_print=$now
     fi
@@ -231,19 +241,10 @@ if ! docker compose up -d; then
   exit 1
 fi
 
-printf '\n%s\n' "   ${DIM}Container logs follow while health checks settle. Chatter here is normal.${OFF}"
-# Deliberately not piped through sed for an indent prefix: with stdout being a
-# pipe rather than a TTY, sed block-buffers and the last few KB of log are still
-# sitting in the buffer when this gets killed -- so the lines never appear at
-# all. Compose already prefixes each line with its service name.
-docker compose logs -f --tail 0 --no-color 2>/dev/null &
-logs_pid=$!
+printf '\n%s\n' "   ${DIM}Health checks below, with the latest line from each container still starting.${OFF}"
 
 health_result=0
 wait_for_health "$EXPECTED" || health_result=1
-
-kill "$logs_pid" 2>/dev/null
-wait "$logs_pid" 2>/dev/null
 
 if [ "$health_result" -eq 0 ]; then
   print_urls
