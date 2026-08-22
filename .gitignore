@@ -74,3 +74,10 @@ Thumbs.db
 # Playwright artefacts
 test-results/
 playwright-report/
+
+# AI Agent files & local instructions
+AGENTS.md
+AGENT.md
+agent.md
+.agent/
+.agents/
