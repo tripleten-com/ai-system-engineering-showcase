@@ -2,8 +2,22 @@ name: CI
 
 on:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'LICENSE'
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - '.gitignore'
+      - '.gitattributes'
+      - 'LICENSE'
 
 env:
   # Both services require this with no fallback; the demo value is public by design.
@@ -79,6 +93,9 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Provide the environment file
         run: cp .env.example .env
 
@@ -134,6 +151,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - run: cp .env.example .env
       - run: docker compose up -d --build --wait
       - run: npx playwright test

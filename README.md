@@ -1,5 +1,8 @@
 # TripleTen AI Systems Engineering Showcase — Autonomous Incident Defense
 
+[![CI](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml/badge.svg)](https://github.com/tripleten-com/ai-system-engineering-showcase/actions/workflows/ci.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/tripleten-com/ai-system-engineering-showcase)
+
 A production-shaped technical demo of how observability, retrieval, guardrails, durable state,
 asynchronous remediation, and human approval fit into one incident-response system.
 
@@ -64,15 +67,17 @@ processes, or change a firewall.
 
 ## Infrastructure
 
-* **Incident War Room** — http://localhost:3000: React interface for launching incidents and following the live response.
-* **Incident Agent API** — http://localhost:8000: FastAPI and LangGraph control plane that analyzes evidence and prepares recovery plans.
-* **Remediation Worker** — internal service: Consumes approved SQS jobs, records deterministic remediation results, archives postmortems, and reports completion.
-* **PostgreSQL with pgvector** — `localhost:5432`: Stores runbooks, vector embeddings, and LangGraph checkpoints.
-* **Redis** — `localhost:6379`: Provides caching, fast state, and worker heartbeats.
-* **LocalStack** — http://localhost:4566: Emulates AWS SQS queues and S3 storage.
-* **Prometheus** — http://localhost:9090: Collects live system metrics.
-* **Grafana** — http://localhost:3001: Displays service health and incident dashboards.
-* **Jaeger** — http://localhost:16686: Visualizes distributed request traces.
+| Name | Description | Url |
+|---|---|---|
+| Incident War Room | React interface for launching incidents and following the live response. | http://localhost:3000 |
+| Incident Agent API | FastAPI and LangGraph control plane that analyzes evidence and prepares recovery plans. | http://localhost:8000 |
+| Remediation Worker | Consumes approved SQS jobs, records deterministic remediation results, archives postmortems, and reports completion. | internal service |
+| PostgreSQL with pgvector | Stores runbooks, vector embeddings, and LangGraph checkpoints. | `localhost:5432` |
+| Redis | Provides caching, fast state, and worker heartbeats. | `localhost:6379` |
+| LocalStack | Emulates AWS SQS queues and S3 storage. | http://localhost:4566 |
+| Prometheus | Collects live system metrics. | http://localhost:9090 |
+| Grafana | Displays service health and incident dashboards. | http://localhost:3001 |
+| Jaeger | Visualizes distributed request traces. | http://localhost:16686 |
 
 ## Step by step
 
@@ -149,12 +154,9 @@ Sanitization, hybrid retrieval, approval checkpoints, security validation, queue
 ### Option A: GitHub Codespaces (1-Click Cloud Environment)
 
 Open this repository in **GitHub Codespaces** (pre-configured with 4 Cores, 16 GB RAM, Docker, Python 3.11, and Node.js 20):
-1. Click **Code** -> **Codespaces** -> **Create codespace on <branch>** (or select the 4-core / 16 GB RAM machine).
-2. Once the environment initializes, run:
-   ```bash
-   docker compose up -d
-   ```
-3. Codespaces will automatically forward and open the **Incident War Room** on port 3000.
+1. Click the **Open in GitHub Codespaces** button at the top of this README (or select **Code** -> **Codespaces** -> **Create codespace on main**).
+2. The environment automatically provisions dependencies, copies `.env.example` to `.env`, and launches the 9-container stack via `docker compose up -d`.
+3. Codespaces automatically forwards and opens the **Incident War Room** on port 3000.
 
 ### Option B: Local Docker Compose
 
