@@ -7,9 +7,19 @@
     "storage": "32gb"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+    // docker-in-docker, NOT docker-outside-of-docker. With the outside-of-docker
+    // feature the daemon is the Codespaces host VM's, whose filesystem does not
+    // contain /workspaces — so every bind mount in infra/docker-compose.yml
+    // silently resolved to an empty directory the daemon created on the host.
+    // Postgres failed loudest ("could not read from input file: Is a directory"
+    // on 01-init-vector.sql), but the Prometheus config, Grafana provisioning,
+    // and LocalStack init script were all equally missing. An in-container
+    // daemon shares this filesystem, so the mounts resolve to the real files.
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "version": "latest",
-      "enableNonRootDocker": "true"
+      // `docker-compose` (hyphen) is what `poe up` / `make up` invoke, and the
+      // v1 Python binary cannot parse the `include:` in the root compose.yaml.
+      "dockerDashComposeVersion": "v2"
     },
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
@@ -60,7 +70,7 @@
     }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "postStartCommand": "docker compose up -d",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
   "customizations": {
     "vscode": {
       "settings": {
