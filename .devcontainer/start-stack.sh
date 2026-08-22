@@ -138,67 +138,44 @@ report_failure() {
   printf '%s\n' "  cat ${LOG}     ${DIM}# this whole run${OFF}"
 }
 
-# container|port|kind|display name|what it does
+# container|display name|what it does
 # Order and wording mirror the Infrastructure table in README.md, so a student
 # reading the repo and a student watching this terminal see the same nine things
 # described the same way. Descriptions are trimmed to fit a terminal.
 SERVICE_ROWS=(
-  "incident-war-room|3000|http|Incident War Room|Launch incidents, follow the live response"
-  "incident-agent-api|8000|http|Incident Agent API|FastAPI + LangGraph control plane, /docs"
-  "remediation-worker||none|Remediation Worker|Runs approved jobs, archives postmortems"
-  "postgres-vector|5432|tcp|PostgreSQL with pgvector|Runbooks, embeddings, LangGraph state"
-  "redis|6379|tcp|Redis|Cache, fast state, worker heartbeats"
-  "localstack|4566|http|LocalStack|Emulated AWS SQS queues and S3 storage"
-  "prometheus|9090|http|Prometheus|Collects live system metrics"
-  "grafana|3001|http|Grafana|Service health and incident dashboards"
-  "jaeger|16686|http|Jaeger|Distributed request traces"
+  "incident-war-room|Incident War Room|Launch incidents, follow the live response"
+  "incident-agent-api|Incident Agent API|FastAPI + LangGraph control plane, /docs"
+  "remediation-worker|Remediation Worker|Runs approved jobs, archives postmortems"
+  "postgres-vector|PostgreSQL with pgvector|Runbooks, embeddings, LangGraph state"
+  "redis|Redis|Cache, fast state, worker heartbeats"
+  "localstack|LocalStack|Emulated AWS SQS queues and S3 storage"
+  "prometheus|Prometheus|Collects live system metrics"
+  "grafana|Grafana|Service health and incident dashboards"
+  "jaeger|Jaeger|Distributed request traces"
 )
 
-# In a Codespace, localhost:3000 is not the address a student can share or open
-# in another tab -- the forwarded host is. CODESPACE_NAME is set by Codespaces
-# and unset everywhere else, which is exactly the distinction needed here.
-url_for() {
-  local port=$1 kind=$2
-  case "$kind" in
-    none) printf 'internal service' ;;
-    tcp)  printf 'localhost:%s' "$port" ;;
-    http)
-      if [ -n "${CODESPACE_NAME:-}" ]; then
-        printf 'https://%s-%s.%s' "$CODESPACE_NAME" "$port" \
-          "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
-      else
-        printf 'http://localhost:%s' "$port"
-      fi
-      ;;
-  esac
-}
-
 print_summary() {
-  local lines row name port kind label desc status color url
+  local lines row name label desc status color
   lines=$(health_lines) || lines=''
 
-  printf '\n%s\n' "${GREEN}${BOLD}Stack is up.${OFF} ${BOLD}Here is what is running:${OFF}"
-  printf '\n%s\n' "${DIM}$(printf '  %-9s %-24s %-42s %s' 'STATUS' 'SERVICE' 'WHAT IT DOES' 'OPEN')${OFF}"
+  printf '\n%s\n\n' "${GREEN}${BOLD}Stack is up.${OFF} ${BOLD}Here is what is running:${OFF}"
 
   for row in "${SERVICE_ROWS[@]}"; do
-    IFS='|' read -r name port kind label desc <<< "$row"
+    IFS='|' read -r name label desc <<< "$row"
     status=$(printf '%s\n' "$lines" | awk -F'|' -v n="$name" '$1 == n {print $2}')
     [ -z "$status" ] && status="missing"
     case "$status" in
       healthy|running) color=$GREEN ;;
       *)               color=$YELLOW ;;
     esac
-    url=$(url_for "$port" "$kind")
-    # Pad inside the colour, never across it: %-9s counting escape bytes as
-    # width is what turns an aligned table into a ragged one.
-    printf '  %s%-9s%s %-24s %s%-42s%s %s\n' \
-      "$color" "$status" "$OFF" "$label" "$DIM" "$desc" "$OFF" "$url"
+    printf '  - %s [%s%s%s] - %s%s%s\n' \
+      "$label" "$color" "$status" "$OFF" "$DIM" "$desc" "$OFF"
   done
 
   # A tenth service added to compose without a row here would simply be absent
-  # from the table, which is the kind of quiet omission a student cannot spot.
+  # from the list, which is the kind of quiet omission a student cannot spot.
   if [ -n "${EXPECTED:-}" ] && [ "${#SERVICE_ROWS[@]}" -ne "$EXPECTED" ]; then
-    printf '\n%s\n' "  ${YELLOW}note:${OFF} compose defines ${EXPECTED} services, this table lists ${#SERVICE_ROWS[@]}."
+    printf '\n%s\n' "  ${YELLOW}note:${OFF} compose defines ${EXPECTED} services, this list covers ${#SERVICE_ROWS[@]}."
     printf '%s\n' "  ${DIM}Add the missing one to SERVICE_ROWS in .devcontainer/start-stack.sh.${OFF}"
   fi
 

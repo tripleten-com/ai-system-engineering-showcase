@@ -156,7 +156,7 @@ Sanitization, hybrid retrieval, approval checkpoints, security validation, queue
 Open this repository in **GitHub Codespaces** (pre-configured with 4 Cores, 16 GB RAM, Docker, Python 3.11, and Node.js 20):
 1. Click the **Open in GitHub Codespaces** button at the top of this README (or select **Code** -> **Codespaces** -> **Create codespace on main**).
 2. The environment provisions dependencies, copies `.env.example` to `.env`, and starts the 9-container stack on its own.
-3. Watch it happen in the **Terminal** panel, in a tab named *Start the incident stack*. It narrates each step -- pull, build, start, health checks -- and a first run takes **4-7 minutes** because it downloads roughly 1.5 GB of images and builds three services. It finishes by printing the table below, with each container's health and its forwarded Codespaces URL.
+3. Watch it happen in the **Terminal** panel, in a tab named *Start the incident stack*. It narrates each step -- pull, build, start, health checks -- and a first run takes **4-7 minutes** because it downloads roughly 1.5 GB of images and builds three services. It finishes by listing all nine containers with their health and a one-line description of each.
 4. Codespaces automatically forwards and opens the **Incident War Room** on port 3000.
 
 Nothing to type. If you closed that terminal or want to run it again by hand:
